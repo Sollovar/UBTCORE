@@ -1,0 +1,10 @@
+# Compiled Go binaries — never commit these, they rebuild automatically
+/api
+/api.exe
+*.exe
+
+# Environment files with secrets
+.env
+
+# Go build cache
+/tmp/

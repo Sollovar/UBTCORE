@@ -1,0 +1,17 @@
+2026/04/19 04:58:46 DB Host: aws-0-eu-west-1.pooler.supabase.com
+2026/04/19 04:58:46 DB Port: 6543
+2026/04/19 04:58:46 DB User: postgres.zhzihlfavquifmccvhqz
+2026/04/19 04:58:46 DB Name: postgres
+2026/04/19 04:58:46 Redis URL: redis://default:gQAAAAAAATHYAAIncDI2YzkyZDJhMTRjMmQ0Y2RlYjdiNDY2MWM0NDk5ZWZkNHAyNzgyOTY@romantic-lacewing-78296.upstash.io:6379
+2026/04/19 04:58:46 Connecting to database: host=aws-0-eu-west-1.pooler.supabase.com port=6543 dbname=postgres user=postgres.zhzihlfavquifmccvhqz
+2026/04/19 04:58:46 Password: "pa5r!mGb$Ax?NHG" (length: 15)
+2026/04/19 04:58:47 Database connected successfully!
+2026/04/19 04:58:47 Running database migrations...
+2026/04/19 04:59:30 Migrations completed
+2026/04/19 04:59:30 Repositories initialized
+2026/04/19 04:59:30 Executor Enabled: true
+2026/04/19 04:59:39 Settlement executor started successfully
+2026/04/19 04:59:39 Initializing matching engine...
+2026/04/19 05:00:16 All services initialized, starting server...
+2026/04/19 05:00:16 Server starting on port 8080
+2026/04/19 05:00:16 Server failed: listen tcp :8080: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.

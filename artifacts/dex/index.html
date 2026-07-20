@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>DEX Trade</title>
+    <meta name="description" content="DEX Trade — built on Replit. Update this description to reflect the app." />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content="DEX Trade" />
+    <meta property="og:description" content="DEX Trade — built on Replit. Update this description to reflect the app." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DEX Trade" />
+    <meta name="twitter:description" content="DEX Trade — built on Replit. Update this description to reflect the app." />
+    <link rel="icon" type="image/png" sizes="20056x20056" href="https://ndgywsfyfxrixhkfrtia.supabase.co/storage/v1/object/public/My%20logod/IMG_8707.png" />
+    <link rel="apple-touch-icon" sizes="256x256" href="https://ndgywsfyfxrixhkfrtia.supabase.co/storage/v1/object/public/My%20logod/IMG_8707.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        transition: opacity 0.45s ease, transform 0.45s ease;
+      }
+      #splash.splash-out {
+        opacity: 0;
+        transform: scale(1.04);
+        pointer-events: none;
+      }
+
+      .splash-logo {
+        position: relative;
+        width: 80px;
+        height: 80px;
+      }
+
+      .splash-logo-ring {
+        position: absolute;
+        inset: -12px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 60, 0, 0.3);
+        animation: splash-ring-spin 3s linear infinite;
+      }
+      .splash-logo-ring::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: calc(50% - 5px);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #FF3C00;
+        box-shadow: 0 0 8px 3px rgba(255, 60, 0, 0.7);
+      }
+
+      .splash-logo-box {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #FF3C00 0%, #ff6a00 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          0 0 0 0 rgba(255, 60, 0, 0.5),
+          0 8px 32px rgba(255, 60, 0, 0.35);
+        animation: splash-pulse 2s ease-in-out infinite;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .splash-logo-box::after {
+        content: '';
+        position: absolute;
+        top: -60%;
+        left: -60%;
+        width: 60%;
+        height: 220%;
+        background: rgba(255,255,255,0.18);
+        transform: rotate(25deg);
+        animation: splash-sheen 2.4s ease-in-out infinite;
+      }
+
+      .splash-logo-letter {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 34px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -1px;
+        position: relative;
+        z-index: 1;
+        user-select: none;
+      }
+
+      .splash-wordmark {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .splash-wordmark-name {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.04em;
+        user-select: none;
+      }
+      .splash-wordmark-name span {
+        color: #FF3C00;
+      }
+      .splash-wordmark-sub {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.35);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        user-select: none;
+      }
+
+      .splash-dots {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+      .splash-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #f5c518;
+        opacity: 0.2;
+        animation: splash-dot-bounce 1.2s ease-in-out infinite;
+      }
+      .splash-dot:nth-child(1) { animation-delay: 0s; }
+      .splash-dot:nth-child(2) { animation-delay: 0.18s; }
+      .splash-dot:nth-child(3) { animation-delay: 0.36s; }
+
+      @keyframes splash-pulse {
+        0%, 100% {
+          box-shadow:
+            0 0 0 0 rgba(255, 60, 0, 0.45),
+            0 8px 32px rgba(255, 60, 0, 0.35);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow:
+            0 0 0 14px rgba(255, 60, 0, 0),
+            0 8px 40px rgba(255, 60, 0, 0.55);
+          transform: scale(1.04);
+        }
+      }
+
+      @keyframes splash-sheen {
+        0%   { left: -60%; opacity: 0; }
+        20%  { opacity: 1; }
+        60%  { left: 120%; opacity: 0; }
+        100% { left: 120%; opacity: 0; }
+      }
+
+      @keyframes splash-ring-spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
+
+      @keyframes splash-dot-bounce {
+        0%, 80%, 100% { opacity: 0.2; transform: scale(1); }
+        40%            { opacity: 1;   transform: scale(1.4); }
+      }
+    </style>
+  </head>
+  <body class="bg-black">
+
+    <div id="splash">
+      <img src="https://ndgywsfyfxrixhkfrtia.supabase.co/storage/v1/object/public/My%20logod/IMG_8705.png" alt="Unbound" style="width: 140px; height: 140px; object-fit: contain;" />
+
+      <div class="splash-wordmark">
+        <div class="splash-wordmark-name">UNBOUND</div>
+        <div class="splash-wordmark-sub">Decentralized Exchange</div>
+      </div>
+
+      <div class="splash-dots">
+        <div class="splash-dot"></div>
+        <div class="splash-dot"></div>
+        <div class="splash-dot"></div>
+      </div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
