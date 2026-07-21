@@ -198,7 +198,7 @@ export function useSolanaDeposit(primaryWallet: any, walletAddress: string | und
         new TransactionInstruction({
           keys: [],
           programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
-          data: new TextEncoder().encode(depositMemo),
+          data: Buffer.from(new TextEncoder().encode(depositMemo)),
         }),
       );
 

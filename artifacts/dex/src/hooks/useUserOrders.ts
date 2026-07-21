@@ -94,6 +94,7 @@ export function useUserOrders(address?: string) {
         }
       };
     }
+    return undefined;
   }, [address, fetchUserOrders]);
 
   return {

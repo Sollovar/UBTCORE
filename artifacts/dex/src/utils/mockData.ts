@@ -1,4 +1,4 @@
-import type { Pair, Orderbook, OrderbookLevel, Candle, RecentTrade } from '../types';
+import type { Pair, Orderbook, OrderbookLevel, Candle, RecentTrade, Token } from '../types';
 import { parseFormattedNumber } from './formatters';
 import { fromWei } from './amount';
 
@@ -112,7 +112,11 @@ export function generateOrderbook(pairId: string, basePrice: number): Orderbook 
     bidPrice *= 1 - rng() * 0.0018;
   }
 
-  return { pairId, bids, asks, spread: asks[0].price - bids[0].price, lastUpdated: new Date().toISOString() };
+  const spread = Number(asks[0].price) - Number(bids[0].price);
+  const midPrice = (Number(asks[0].price) + Number(bids[0].price)) / 2;
+  const spreadPercent = (spread / midPrice) * 100;
+
+  return { pairId, bids, asks, spread, spreadPercent, midPrice, lastUpdated: new Date().toISOString() };
 }
 
 // ─── Caches ───────────────────────────────────────────────────────
@@ -279,7 +283,7 @@ export function normalizeApiPair(p: any): Pair {
   const rawQuote = parseTokenField(p.quote_token);
 
   // Build baseToken: start from token_info (authoritative), fill gaps from rawBase and top-level columns
-  let baseToken: Record<string, any> = {
+  let baseToken: Token = {
     address:  (baseTokenInfo?.address)  || rawBase.address  || '',
     name:     (baseTokenInfo?.name)     || rawBase.name     || p.base_symbol  || '',
     symbol:   (baseTokenInfo?.symbol)   || rawBase.symbol   || p.base_symbol  || '',
@@ -300,7 +304,7 @@ export function normalizeApiPair(p: any): Pair {
   if (!baseToken.symbol && p.base_symbol) baseToken.symbol = p.base_symbol;
 
   // Build quoteToken: same priority — token_info first, rawQuote fallback
-  let quoteToken: Record<string, any> = {
+  let quoteToken: Token = {
     address:  (quoteTokenInfo?.address)  || rawQuote.address  || '',
     name:     (quoteTokenInfo?.name)     || rawQuote.name     || p.quote_symbol || '',
     symbol:   (quoteTokenInfo?.symbol)   || rawQuote.symbol   || p.quote_symbol || '',

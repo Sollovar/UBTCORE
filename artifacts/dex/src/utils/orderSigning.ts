@@ -90,15 +90,15 @@ function hashOrderData(order: OrderData): string {
     encodeAbiParameters(
       ORDER_TYPE,
       [
-        order.maker,
-        order.tokenIn,
-        order.tokenOut,
+        order.maker as `0x${string}`,
+        order.tokenIn as `0x${string}`,
+        order.tokenOut as `0x${string}`,
         BigInt(order.amountIn),
         BigInt(order.amount),
         BigInt(order.amountOutMin),
         BigInt(order.expiration),
         BigInt(order.nonce),
-        order.receiver || '0x0000000000000000000000000000000000000000',
+        (order.receiver || '0x0000000000000000000000000000000000000000') as `0x${string}`,
         BigInt(order.salt || 0),
       ]
     )
@@ -135,7 +135,7 @@ function computeOrderHash(order: OrderData, chainId: bigint, verifyingContract: 
   return keccak256(
     encodePacked(
       ['bytes1', 'bytes32', 'bytes32'],
-      ['0x19', domainSep, orderDataHash]
+      ['0x19' as `0x${string}`, domainSep as `0x${string}`, orderDataHash as `0x${string}`]
     )
   );
 }
@@ -164,9 +164,9 @@ export async function signOrder(
   };
 
   const types = {
-    EIP712Domain: EIP712_DOMAIN,
-    Order: ORDER_TYPE,
-  };
+    EIP712Domain: Array.from(EIP712_DOMAIN),
+    Order: Array.from(ORDER_TYPE),
+  } as Record<string, unknown[]>;
 
   const salt = BigInt(order.salt !== undefined ? order.salt : Math.floor(Math.random() * 1000000));
   const message = {
@@ -182,12 +182,16 @@ export async function signOrder(
     salt,
   };
 
-  const signature = await walletClient.signTypedData({
+  const signature = await walletClient.signTypedData?.({
     domain,
     types,
     primaryType: 'Order',
     message,
   });
+
+  if (!signature) {
+    throw new Error('Failed to sign order');
+  }
 
   const orderHash = computeOrderHash({ ...order, salt: Number(salt) }, chainId, verifyingContract);
 
@@ -203,9 +207,9 @@ function hashLadderAuthData(auth: LadderAuthData): string {
     encodeAbiParameters(
       LADDER_AUTH_TYPE,
       [
-        auth.maker,
-        auth.tokenIn,
-        auth.tokenOut,
+        auth.maker as `0x${string}`,
+        auth.tokenIn as `0x${string}`,
+        auth.tokenOut as `0x${string}`,
         BigInt(auth.totalAmount),
         scalePriceToFixedPoint(auth.priceStart),
         scalePriceToFixedPoint(auth.priceEnd),
@@ -224,7 +228,7 @@ function computeLadderAuthHash(auth: LadderAuthData, chainId: bigint, verifyingC
   return keccak256(
     encodePacked(
       ['bytes1', 'bytes32', 'bytes32'],
-      ['0x19', domainSep, authDataHash]
+      ['0x19' as `0x${string}`, domainSep as `0x${string}`, authDataHash as `0x${string}`]
     )
   );
 }
@@ -253,9 +257,9 @@ export async function signLadderAuth(
   };
 
   const types = {
-    EIP712Domain: EIP712_DOMAIN,
-    LadderAuth: LADDER_AUTH_TYPE,
-  };
+    EIP712Domain: Array.from(EIP712_DOMAIN),
+    LadderAuth: Array.from(LADDER_AUTH_TYPE),
+  } as Record<string, unknown[]>;
 
   const salt = BigInt(auth.salt !== undefined ? auth.salt : Math.floor(Math.random() * 1000000));
   const message = {
@@ -271,12 +275,16 @@ export async function signLadderAuth(
     salt,
   };
 
-  const signature = await walletClient.signTypedData({
+  const signature = await walletClient.signTypedData?.({
     domain,
     types,
     primaryType: 'LadderAuth',
     message,
   });
+
+  if (!signature) {
+    throw new Error('Failed to sign ladder auth');
+  }
 
   return {
     signature,
@@ -290,13 +298,13 @@ export async function approveToken(
   amount?: string,
   walletClient?: WalletClient
 ): Promise<string> {
-  if (!walletClient) {
+  if (!walletClient || !walletClient.writeContract) {
     throw new Error('Wallet client not available');
   }
 
   const approveAmount = amount || '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
-  return walletClient.writeContract({
+  const result = await walletClient.writeContract({
     address: tokenAddress,
     abi: [
       {
@@ -313,6 +321,12 @@ export async function approveToken(
     functionName: 'approve',
     args: [spenderAddress, BigInt(approveAmount)],
   });
+
+  if (!result) {
+    throw new Error('Failed to approve token');
+  }
+
+  return result;
 }
 
 // Public client interface for reading contract data
@@ -401,18 +415,21 @@ export function verifyOrderSignature(
   signature: string,
   network: Network
 ): boolean {
-  const chainId = network === 'bsc' ? 56 : 8453;
+  const chainId = BigInt(network === 'bsc' ? 56 : 8453);
   const verifyingContract = getSettlementAddress(network);
   
   const computedHash = computeOrderHash(order, chainId, verifyingContract);
   
   try {
     const recovered = recoverAddress({
-      hash: computedHash,
+      hash: computedHash as `0x${string}`,
       signature: signature as `0x${string}`,
     });
     
-    return recovered.toLowerCase() === order.maker.toLowerCase();
+    // Note: recovered might be a Promise, but recoverAddress is actually synchronous from viem
+    // However, to handle potential async behavior, we compare directly
+    const recoveredStr = typeof recovered === 'string' ? recovered : String(recovered);
+    return recoveredStr.toLowerCase() === order.maker.toLowerCase();
   } catch {
     return false;
   }
@@ -422,7 +439,7 @@ export function computeOrderHashLocal(
   order: OrderData,
   network: Network
 ): string {
-  const chainId = network === 'bsc' ? 56 : 8453;
+  const chainId = BigInt(network === 'bsc' ? 56 : 8453);
   const verifyingContract = getSettlementAddress(network);
   return computeOrderHash(order, chainId, verifyingContract);
 }

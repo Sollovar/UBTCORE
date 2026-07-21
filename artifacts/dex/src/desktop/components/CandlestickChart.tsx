@@ -480,7 +480,7 @@ export function CandlestickChart({ livePrice = 0, showToolbar = true, pairId, ti
             style={{
               backgroundColor: chartUnit === "usd" ? "#f5c518" : "transparent",
               color: chartUnit === "usd" ? "#000" : "#cbd5e1",
-              opacity: usdAvailable || chartUnit === "quote" ? 1 : 0.5,
+              opacity: usdAvailable || chartUnit === "usd" ? 1 : 0.5,
             }}
             disabled={!usdAvailable && chartUnit === "usd"}
           >

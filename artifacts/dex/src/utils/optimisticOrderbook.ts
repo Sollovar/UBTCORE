@@ -21,7 +21,7 @@ export function calculateOrderTotal(price: number, amount: number): number {
  * Validate order parameters
  */
 export function validateOrderParams(params: OptimisticOrderParams): boolean {
-  return (
+  return !!(
     params.pairId &&
     (params.side === 'buy' || params.side === 'sell') &&
     params.price > 0 &&

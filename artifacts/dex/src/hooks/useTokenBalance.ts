@@ -83,8 +83,8 @@ export function useTokenBalance(
     setError(null);
 
     try {
-      let tokenDecimals: number;
-      let rawBalance: bigint;
+      let tokenDecimals: number = NATIVE_TOKEN_DECIMALS;
+      let rawBalance: bigint = 0n;
       const normalizedAddress = tokenAddress.trim();
       const isNativeToken = normalizedAddress === '' ||
         normalizedAddress.toLowerCase() === '0x' ||
@@ -183,7 +183,7 @@ export function useTokenBalance(
         });
 
         if (isNativeToken) {
-          rawBalance = await publicClient.getBalance({ address: walletAddress });
+          rawBalance = await publicClient.getBalance({ address: walletAddress as `0x${string}` });
           tokenDecimals = NATIVE_TOKEN_DECIMALS;
         } else {
           tokenDecimals = await publicClient.readContract({
@@ -195,7 +195,7 @@ export function useTokenBalance(
             address: tokenAddress as `0x${string}`,
             abi: ERC20_ABI,
             functionName: 'balanceOf',
-            args: [walletAddress],
+            args: [walletAddress as `0x${string}`],
           });
         }
       }

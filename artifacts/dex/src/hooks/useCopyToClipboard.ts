@@ -1,9 +1,7 @@
 import { useCallback } from 'react';
-import { useToast } from '../components/common/Toast';
+import { toast } from './use-toast';
 
 export function useCopyToClipboard() {
-  const { showToast } = useToast();
-
   const copyToClipboard = useCallback(async (text: string, label: string = 'Copied!') => {
     try {
       if (navigator.clipboard && window.isSecureContext) {
@@ -18,20 +16,19 @@ export function useCopyToClipboard() {
         document.body.removeChild(textArea);
       }
 
-      showToast({
+      toast({
         title: label,
         description: `${text.slice(0, 6)}...${text.slice(-4)}`,
-        variant: 'success',
       });
     } catch (error) {
       console.error('Failed to copy:', error);
-      showToast({
+      toast({
         title: 'Failed to copy',
         description: 'Could not copy to clipboard',
-        variant: 'error',
+        variant: 'destructive',
       });
     }
-  }, [showToast]);
+  }, []);
 
   return { copyToClipboard };
 }

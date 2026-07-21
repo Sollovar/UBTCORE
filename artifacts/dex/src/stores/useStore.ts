@@ -41,7 +41,7 @@ interface AppState {
   setSelectedPair: (pair: Pair | null) => void;
   setOrderbook: (orderbook: Orderbook | null) => void;
   setUserOrders: (orders: Order[] | ((currentOrders: Order[]) => Order[])) => void;
-  updateUserOrder: (orderId: number, updates: Partial<Pick<Order, 'filledAmount' | 'status'>>) => void;
+  updateUserOrder: (orderId: string, updates: Partial<Pick<Order, 'filledAmount' | 'status'>>) => void;
   updatePair: (pairId: string, updates: Partial<Pick<Pair, 'price' | 'priceUSD' | 'priceChange24h' | 'volume24h' | 'volume24hUSD' | 'liquidity' | 'liquidityUSD' | 'marketCap' | 'marketCapUSD' | 'priceLow24h' | 'priceHigh24h' | 'trendingScore' | 'geckoPrice' | 'geckoPriceUSD' | 'geckoPriceChange24h' | 'geckoHigh24h' | 'geckoLow24h' | 'geckoLiquidity' | 'geckoLiquidityUSD' | 'geckoMarketCap' | 'geckoMarketCapUSD' | 'lastTradePrice'>>) => void;
   setPairsLoading: (loading: boolean, network?: string) => void;
   setFlash: (pairId: string, direction: FlashDir) => void;
@@ -148,7 +148,7 @@ export const useStore = create<AppState>((set, get) => ({
           chainId: parseInt(chainId, 16)
         });
 
-        window.ethereum.on('accountsChanged', (accounts: unknown) => {
+        window.ethereum?.on?.('accountsChanged', (accounts: unknown) => {
           const newAccounts = accounts as string[];
           if (newAccounts.length === 0) {
             set({ walletAddress: null, isConnected: false, chainId: null });
@@ -157,7 +157,7 @@ export const useStore = create<AppState>((set, get) => ({
           }
         });
 
-        window.ethereum.on('chainChanged', (chainId: unknown) => {
+        window.ethereum?.on?.('chainChanged', (chainId: unknown) => {
           set({ chainId: parseInt(chainId as string, 16) });
         });
       }
