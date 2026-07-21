@@ -9,7 +9,123 @@ This guide covers hosting all components together.
 
 ---
 
-## Option 1: Vercel + Netlify + Railway (Recommended for Most)
+## Option 1: Fly.io Backend + Fly.io PostgreSQL (Simplest & Cheapest)
+
+### Deploy Everything on Fly.io
+
+Fly.io lets you host both your backend AND database on the same platform—super simple.
+
+### Setup Steps
+
+**1. Install Fly CLI:**
+```bash
+curl -L https://fly.io/install.sh | sh
+fly auth login
+```
+
+**2. Deploy your backend with built-in PostgreSQL:**
+```bash
+cd /path/to/your/backend
+fly launch  # Creates fly.toml and asks for app name (e.g., "ubt-backend")
+```
+
+**3. Fly CLI will ask:**
+- App name: `ubt-backend`
+- Region: Choose closest to you (e.g., `sin` for Singapore, `iad` for US)
+- Postgres database? **Answer YES**
+- Redis database? **Answer YES**
+
+**4. This auto-generates `fly.toml` config. It will:**
+- Create PostgreSQL instance
+- Create Redis instance
+- Set environment variables automatically (DATABASE_URL, REDIS_URL)
+- Deploy your backend
+
+**5. Deploy:**
+```bash
+fly deploy
+```
+
+Your backend is now live at `https://ubt-backend.fly.dev`
+
+**6. Deploy Frontend separately (Vercel or Netlify):**
+```bash
+# Just connect your GitHub repo to Vercel
+# Set root directory: artifacts/dex
+# Deploy
+```
+
+### Data Flow
+```
+Frontend (Vercel) → API Gateway (Fly.io)
+    ↓
+Backend (Go) + WebSocket (Fly.io)
+    ↓
+PostgreSQL (Fly.io) + Redis (Fly.io)
+    ↓
+Blockchain RPC Nodes
+```
+
+### Advantages
+✅ **ONE CLICK deployment** (almost)  
+✅ PostgreSQL included and auto-managed  
+✅ Redis included  
+✅ Auto-scaling built-in  
+✅ Global edge network (fast everywhere)  
+✅ Cheapest option (~$3-8/month)  
+✅ Free SSL/HTTPS  
+✅ No DevOps knowledge needed  
+
+### Cost Breakdown
+- Shared PostgreSQL: $7/month (3GB storage)
+- Shared Redis: $3/month (1GB)
+- Backend compute: Pay-as-you-go (~$0.15/hour = ~$3-5/month light usage)
+- **Total: ~$13-15/month** (or less if you use free tier)
+
+### Free Tier Available
+- 3 shared-cpu-1x machines
+- 3GB PostgreSQL
+- 3GB Redis
+- Very suitable for testing/staging
+
+### Why Fly.io PostgreSQL vs Supabase?
+| Feature | Fly.io PostgreSQL | Supabase |
+|---------|------------------|----------|
+| Cost | $7/mo | $25/mo |
+| PostgreSQL | ✅ Same | ✅ Same |
+| Redis | ✅ Included | ❌ Separate ($3-5) |
+| API | ❌ No (use direct) | ✅ REST/GraphQL |
+| Auth | ❌ Use own | ✅ Built-in |
+| Real-time | ❌ Manual | ✅ Built-in |
+| Setup | One command | More config |
+| **For your DEX** | ✅ **RECOMMENDED** | Overkill |
+
+**Your DEX uses direct database queries via Go backend** (not Supabase REST API), so Fly.io PostgreSQL is perfect—simpler and cheaper!
+
+### Migration from Supabase to Fly.io
+If you already have Supabase running locally:
+```bash
+# 1. Create Fly app with PostgreSQL
+fly launch
+
+# 2. Get connection details
+fly postgres connect
+
+# 3. Dump your Supabase schema
+pg_dump -U postgres supabase_db > backup.sql
+
+# 4. Restore to Fly PostgreSQL
+psql $DATABASE_URL < backup.sql
+
+# 5. Update backend .env
+DATABASE_URL=$(fly postgres connect --proxy-port 5432)
+```
+
+Done! Your backend now uses Fly.io PostgreSQL instead of Supabase.
+
+---
+
+## Option 1B: Vercel + Railway + Supabase (Popular Choice)
 
 ### Frontend: Vercel or Netlify (Free)
 - **Deploy:** React/Vite frontend from `artifacts/dex`
@@ -35,14 +151,21 @@ This guide covers hosting all components together.
 
 ### Database: Supabase Cloud (Recommended)
 - **Deploy:** Managed PostgreSQL in cloud
+- **IMPORTANT:** Supabase is a managed service and must be hosted on Supabase.com, NOT Railway
 - **Steps:**
   1. Go to supabase.com → Create new project
-  2. Get connection string
-  3. Update `backend/.env` with new DB_HOST, DB_PORT, DB_USER, DB_PASSWORD
-  4. Run migrations from `backend/migrations/` manually or via CLI
-  5. Connect backend to cloud Supabase
+  2. Get connection string from Settings → Database
+  3. Copy these credentials:
+     - Database URL (PostgreSQL connection string)
+     - Supabase URL (API endpoint)
+     - Supabase API Key (anon public key)
+  4. Add to your Railway backend environment variables:
+     - `DATABASE_URL=<your-supabase-connection-string>`
+     - `SUPABASE_URL=<your-supabase-url>`
+     - `SUPABASE_KEY=<your-supabase-api-key>`
+  5. Run migrations from `backend/migrations/` using Supabase CLI or manually
 - **Cost:** Free tier includes 500MB database + 2GB bandwidth
-- **Alternative:** Use Supabase's own hosting
+- **Why not Railway?** Supabase isn't a containerized app—it's a managed PostgreSQL service that requires Supabase infrastructure
 
 ### Data Flow
 ```
@@ -77,7 +200,217 @@ Deploy as single container to:
 
 ---
 
-## Option 3: AWS / Google Cloud / Azure (Enterprise)
+## Option 3: VPS (Single Server - Best Control)
+
+### All-in-One VPS Deployment (DigitalOcean, Linode, AWS EC2, Hetzner, etc.)
+
+Host everything on one Linux VPS:
+
+### Setup Steps
+
+**1. Rent a VPS**
+- DigitalOcean: $6-12/month (Droplet with Ubuntu 22.04)
+- Linode: $5-15/month
+- Hetzner: €3-5/month (very affordable)
+- AWS EC2: $5-10/month (free tier for 12 months)
+
+**2. SSH into your VPS and install required software:**
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Go (for backend)
+wget https://go.dev/dl/go1.21.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+source ~/.bashrc
+
+# Install Node.js (for frontend build)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Install PostgreSQL
+sudo apt install -y postgresql postgresql-contrib
+
+# Install Redis
+sudo apt install -y redis-server
+
+# Install Nginx (reverse proxy)
+sudo apt install -y nginx
+
+# Install Git
+sudo apt install -y git
+```
+
+**3. Clone your repositories:**
+```bash
+cd /home/username
+git clone https://github.com/Sollovar/UBTCORE.git
+cd UBTCORE
+```
+
+**4. Setup PostgreSQL Database:**
+```bash
+sudo su - postgres
+psql
+
+# Create database and user
+CREATE DATABASE ubt_db;
+CREATE USER ubt_user WITH PASSWORD 'strong_password_here';
+ALTER ROLE ubt_user SET client_encoding TO 'utf8';
+ALTER ROLE ubt_user SET default_transaction_isolation TO 'read committed';
+ALTER ROLE ubt_user SET default_transaction_deferrable TO on;
+ALTER ROLE ubt_user SET default_transaction_read_only TO off;
+ALTER ROLE ubt_user SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE ubt_db TO ubt_user;
+
+# Run migrations
+# Connect as ubt_user and run your migration files from supabase/migrations/
+```
+
+**5. Build and run backend:**
+```bash
+cd /home/username/UBTCORE/backend
+
+# Create .env with your settings
+cat > .env << EOF
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=ubt_user
+DB_PASSWORD=strong_password_here
+DB_NAME=ubt_db
+REDIS_URL=redis://localhost:6379
+PORT=8080
+NODE_ENV=production
+# Add other required env vars
+EOF
+
+# Build backend
+go build -o ubt-backend
+
+# Run as systemd service (persistent)
+sudo tee /etc/systemd/system/ubt-backend.service > /dev/null << EOF
+[Unit]
+Description=UNBOUND DEX Backend
+After=network.target postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=username
+WorkingDirectory=/home/username/UBTCORE/backend
+ExecStart=/home/username/UBTCORE/backend/ubt-backend
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable ubt-backend
+sudo systemctl start ubt-backend
+```
+
+**6. Build and serve frontend:**
+```bash
+cd /home/username/UBTCORE/artifacts/dex
+
+# Install dependencies
+npm install
+
+# Build for production
+npm run build
+
+# Serve with Nginx (see below)
+```
+
+**7. Configure Nginx as reverse proxy:**
+```bash
+sudo tee /etc/nginx/sites-available/default > /dev/null << EOF
+upstream backend {
+    server localhost:8080;
+}
+
+server {
+    listen 80 default_server;
+    server_name your_domain.com;
+
+    # Frontend
+    location / {
+        root /home/username/UBTCORE/artifacts/dex/dist;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Backend API
+    location /api {
+        proxy_pass http://backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # WebSocket
+    location /ws {
+        proxy_pass http://backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOF
+
+sudo systemctl restart nginx
+```
+
+**8. Enable HTTPS (SSL certificate - free with Let's Encrypt):**
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your_domain.com
+sudo systemctl restart nginx
+```
+
+### Data Flow
+```
+Your Domain → Nginx (port 80/443)
+    ↓
+Frontend (React static files)
+Backend (Go API on :8080)
+    ↓
+PostgreSQL (local)
+    ↓
+Redis (local)
+    ↓
+Blockchain RPC Nodes
+```
+
+### Advantages
+✅ Full control over infrastructure  
+✅ No vendor lock-in  
+✅ Cheapest option (~$5-15/month all-in)  
+✅ Can run everything on same server  
+✅ Easy to debug and manage  
+
+### Disadvantages
+❌ You maintain the server (updates, security, backups)  
+❌ No auto-scaling  
+❌ Single point of failure (no redundancy)  
+
+### Maintenance Tips
+- Backup database regularly: `pg_dump ubt_db > backup.sql`
+- Monitor disk space: `df -h`
+- Check logs: `journalctl -u ubt-backend -f`
+- Keep system updated: `sudo apt update && sudo apt upgrade`
+
+---
+
+## Option 4: AWS / Google Cloud / Azure (Enterprise)
 
 Full control but more complex:
 - **Frontend:** CloudFront + S3 (or Cloud Run, App Engine)

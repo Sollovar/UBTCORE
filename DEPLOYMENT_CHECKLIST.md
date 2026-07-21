@@ -1,359 +1,278 @@
-# Gecko/Exchange Price Separation - Deployment Checklist
+# UNBOUND DEX - Deployment Checklist
 
-## Pre-Deployment
+Complete checklist for deploying UNBOUND DEX to production.
 
-### 1. Backup Database
-```bash
-pg_dump -h YOUR_HOST -U YOUR_USER -d YOUR_DB > backup_before_gecko_migration_$(date +%Y%m%d_%H%M%S).sql
-```
-⏱️ **Time:** 1-5 minutes depending on database size
-✅ **Status:** [ ]
+## ✅ Backend (Fly.io) - COMPLETE
 
-### 2. Verify All Services Running
-```bash
-# Check backend
-curl http://localhost:8080/health
+- [x] Go backend code prepared
+- [x] Dockerfile created for multi-stage build
+- [x] `fly.toml` configuration created
+- [x] Deployed to Fly.io (`ubtbackend.fly.dev`)
+- [x] Connected to Fly.io PostgreSQL database
+- [x] Database tables auto-created via GORM AutoMigrate
+- [x] Health check endpoint responding: `https://ubtbackend.fly.dev/health`
+- [x] API endpoints working:
+  - [x] `/api/v1/pairs` (returning 59 pairs)
+  - [x] `/api/v1/pairs?network=bsc` (20 pairs)
+  - [x] `/api/v1/pairs?network=base` (19 pairs)
+  - [x] `/api/v1/pairs?network=solana` (20 pairs)
 
-# Check price-worker
-pm2 list | grep price-worker
-
-# Check frontend
-curl http://localhost:3000 || curl http://localhost:5173
-```
-✅ **Status:** [ ]
-
-### 3. Note Current Behavior
-Test and document current UI behavior for comparison:
-- [ ] Mobile Market page: Note top price value
-- [ ] Mobile Chart dropdown: Note "Exchange Price" value  
-- [ ] Mobile Trade page: Note both price values
-- [ ] Screenshot or record values for comparison
-
-✅ **Status:** [ ]
+**Status**: ✅ FULLY OPERATIONAL
 
 ---
 
-## Deployment Steps
+## ✅ Pair Indexer (Fly.io) - COMPLETE
 
-### Step 1: Stop Services (30 seconds)
-```bash
-# Stop price-worker
-pm2 stop price-worker
+- [x] Node.js server code prepared
+- [x] Dockerfile created for multi-stage build
+- [x] `fly.toml` configuration created
+- [x] Deployed to Fly.io (`ubtpairindexer`)
+- [x] Connected to same Fly.io PostgreSQL database
+- [x] Environment variables configured correctly
+- [x] **DATABASE SCHEMA FIX APPLIED**: Removed non-existent columns from INSERT query
+- [x] Pair fetching working: Health check shows 59 pairs
+- [x] Pairs being inserted into database
+- [x] Scheduled sync running every 15 minutes
 
-# Stop backend
-./backend/stop.sh
-# or
-pkill -f "your-backend-binary"
-```
-⏱️ **Time:** 30 seconds
-✅ **Status:** [ ]
-
-### Step 2: Run Database Migration (10 seconds)
-```bash
-cd backend
-psql -h YOUR_HOST -U YOUR_USER -d YOUR_DB -f migrations/001_add_gecko_columns.sql
-```
-
-**Expected output:**
-```
-ALTER TABLE
-UPDATE 123
-COMMENT
-COMMENT
-COMMENT
-COMMENT
-COMMENT
-```
-
-⏱️ **Time:** 10 seconds
-✅ **Status:** [ ]
-
-### Step 3: Start Backend (10 seconds)
-```bash
-cd backend
-./start.sh
-# or your deployment method
-```
-
-**Check logs:**
-```bash
-tail -f backend/logs/app.log
-```
-
-Look for: No errors about missing `gecko_*` columns
-
-⏱️ **Time:** 10 seconds
-✅ **Status:** [ ]
-
-### Step 4: Start Price-Worker (5 seconds)
-```bash
-cd price-worker
-pm2 start index.js --name price-worker
-# or
-pm2 restart price-worker
-```
-
-**Check logs:**
-```bash
-pm2 logs price-worker --lines 50
-```
-
-Look for:
-- ✅ `[PriceWorker] Sync @ ...`
-- ✅ `... prices synced`
-- ❌ No SQL errors
-
-⏱️ **Time:** 5 seconds
-✅ **Status:** [ ]
-
-### Step 5: Clear Cache (5 seconds)
-```bash
-curl -X POST http://localhost:8080/api/v1/cache/clear
-```
-
-Or connect to Redis:
-```bash
-redis-cli FLUSHDB
-```
-
-⏱️ **Time:** 5 seconds
-✅ **Status:** [ ]
-
-### Step 6: Verify API Response (10 seconds)
-```bash
-curl http://localhost:8080/api/v1/pairs?limit=1 | jq
-```
-
-**Look for:**
-```json
-{
-  "data": [{
-    "gecko_price": "0.001234",      ✅ Present
-    "gecko_price_usd": "0.789",     ✅ Present
-    "gecko_price_change_24h": "2.3",✅ Present
-    "price": "0.001240",            ✅ Present
-    "price_usd": "0.792"            ✅ Present
-  }]
-}
-```
-
-⏱️ **Time:** 10 seconds
-✅ **Status:** [ ]
+**Status**: ✅ FULLY OPERATIONAL
 
 ---
 
-## Post-Deployment Verification
+## 🟡 Frontend (Vercel) - READY TO DEPLOY
 
-### Automated Tests
-Run the verification script:
+### Configuration
+- [x] `.env` file created with `VITE_API_URL=https://ubtbackend.fly.dev`
+- [x] `.env.production` file created with same URL
+- [x] `.env.local` file created for local testing
+- [x] `.env.example` file created for documentation
+- [x] `.gitignore` updated to exclude `.env.production.local`
 
-**Linux/Mac:**
+### Code Fixes
+- [x] Fixed `useCandles.ts` - now uses `API_BASE_URL`
+- [x] Fixed `useFillNotifications.ts` - now uses `API_BASE_URL`
+- [x] Verified all other API calls use `fetchApi` helper
+
+### Deployment Steps
+- [ ] **Step 1**: Go to https://vercel.com/dashboard
+- [ ] **Step 2**: Click "Add New..." → "Project"
+- [ ] **Step 3**: Select GitHub and import `UBTCORE` repository
+- [ ] **Step 4**: Set root directory to `artifacts/dex`
+- [ ] **Step 5**: Configure environment variables:
+  - [ ] `VITE_API_URL` = `https://ubtbackend.fly.dev`
+- [ ] **Step 6**: Click "Deploy"
+- [ ] **Step 7**: Wait for build to complete (~5-10 minutes)
+- [ ] **Step 8**: Access frontend at provided Vercel URL
+- [ ] **Step 9**: Test pair loading in Markets page
+
+**Status**: 🟡 READY TO DEPLOY
+
+---
+
+## 🔵 Database (Fly.io PostgreSQL) - COMPLETE
+
+- [x] PostgreSQL cluster created on Fly.io
+- [x] Database name: `fly-db`
+- [x] Tables auto-created:
+  - [x] `users`
+  - [x] `pairs` (59 pairs inserted)
+  - [x] `orders`
+  - [x] `fills`
+  - [x] `tokens`
+  - [x] `solana_deposits`
+  - [x] `refund_requests`
+  - [x] `candles`
+- [x] Indexes created for performance
+- [x] Data syncing working correctly
+
+**Status**: ✅ FULLY OPERATIONAL
+
+---
+
+## 📋 Verification Checklist
+
+### Backend Tests
 ```bash
-chmod +x verify_price_separation.sh
-./verify_price_separation.sh
+# Health check
+curl https://ubtbackend.fly.dev/health
+# Expected: {"status":"ok","time":...}
+
+# Get all pairs
+curl https://ubtbackend.fly.dev/api/v1/pairs
+# Expected: {"count":59,"data":[...]}
+
+# Get BSC pairs
+curl https://ubtbackend.fly.dev/api/v1/pairs?network=bsc
+# Expected: {"count":20,"data":[...]}
+
+# Get trending pairs
+curl https://ubtbackend.fly.dev/api/v1/pairs/trending
+# Expected: {"count":59,"data":[...]}
 ```
 
-**Windows:**
-```powershell
-.\verify_price_separation.ps1
+### Frontend Tests (After Deployment)
+- [ ] Navigate to frontend URL
+- [ ] Markets page loads without errors
+- [ ] Pairs list displays 59 pairs
+- [ ] Price data is visible
+- [ ] Can click on a pair to view details
+- [ ] Orderbook loads
+- [ ] Charts render correctly
+- [ ] Mobile view works (resize browser)
+- [ ] Can connect wallet (Dynamic Labs integration)
+
+### Network Tests
+- [ ] Open browser DevTools (F12)
+- [ ] Network tab shows requests to `https://ubtbackend.fly.dev/api/v1/...`
+- [ ] No CORS errors
+- [ ] No 404 errors
+- [ ] WebSocket connection works (check Console for ws messages)
+
+---
+
+## 🚀 Deployment Instructions
+
+### For Vercel Deployment:
+
+1. **Go to Vercel Dashboard**
+   ```
+   https://vercel.com/dashboard
+   ```
+
+2. **Create New Project**
+   - Click "Add New..." → "Project"
+   - Connect GitHub if not already connected
+   - Search for and select `UBTCORE` repository
+
+3. **Configure Build**
+   - **Project Name**: `unbound-dex` (or preferred name)
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `artifacts/dex`
+   - Leave other settings as default
+
+4. **Add Environment Variables**
+   - Click "Add Environment Variables" (or skip and add later)
+   - **Name**: `VITE_API_URL`
+   - **Value**: `https://ubtbackend.fly.dev`
+   - **Environments**: Select "Production, Preview, Development"
+
+5. **Deploy**
+   - Click "Deploy"
+   - Watch the build progress
+   - Wait 5-10 minutes for build to complete
+
+6. **Access Frontend**
+   - Vercel will provide a deployment URL
+   - URL format: `https://unbound-dex.vercel.app` (or similar)
+   - Click to visit your live frontend
+
+7. **Test**
+   - Navigate to `/trade`
+   - Go to Markets tab
+   - Verify pairs load from backend
+   - Test a trade (if wallet connected)
+
+---
+
+## 🔗 System Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                     USER BROWSER                          │
+├──────────────────────────────────────────────────────────┤
+│                                                           │
+│  ┌─────────────────────────────────┐                    │
+│  │ UNBOUND DEX Frontend (React)    │                    │
+│  │ Deployed on Vercel              │                    │
+│  │ URL: vercel.app/...             │                    │
+│  └────────────────┬────────────────┘                    │
+│                   │ VITE_API_URL=                       │
+│                   │ https://ubtbackend.fly.dev          │
+│                   ↓                                      │
+└──────────────────────────────────────────────────────────┘
+                    │
+                    │ HTTP/WebSocket
+                    ↓
+      ┌─────────────────────────────────┐
+      │ Backend API (Go)                │
+      │ Deployed on Fly.io              │
+      │ URL: ubtbackend.fly.dev         │
+      │ - Pair data endpoints           │
+      │ - Order management              │
+      │ - Trading engine                │
+      │ - WebSocket connections         │
+      └────────────┬────────────────────┘
+                   │ SQL
+                   ↓
+      ┌─────────────────────────────────┐
+      │ PostgreSQL Database             │
+      │ Fly.io Managed Postgres         │
+      │ - Pairs (59+)                   │
+      │ - Orders                        │
+      │ - Fills                         │
+      │ - Users                         │
+      │ - Tokens                        │
+      └─────────────────────────────────┘
+                   ↑
+                   │ Scheduled Insert
+      ┌────────────┴────────────────────┐
+      │ Pair Indexer (Node.js)          │
+      │ Deployed on Fly.io              │
+      │ - Fetches pairs from GeckoTerm  │
+      │ - Syncs every 15 minutes        │
+      └─────────────────────────────────┘
 ```
 
-⏱️ **Time:** 30 seconds
-✅ **Status:** [ ]
+---
 
-### Manual UI Tests
+## 📊 Deployment Status Summary
 
-#### Test 1: Mobile Market Page
-1. Open mobile view (or use DevTools mobile emulation)
-2. Navigate to Markets page
-3. Observe top price for any pair
-4. **Expected:** Price updates every ~39 seconds (gecko updates)
-5. **Screenshot:** [ ]
-
-⏱️ **Time:** 1 minute
-✅ **Status:** [ ]
-
-#### Test 2: Mobile Chart View
-1. Open mobile view
-2. Select a trading pair
-3. Navigate to Chart tab
-4. Check top-right corner price
-5. Click dropdown arrow next to price
-6. **Expected:** 
-   - Top price = Gecko price (market reference)
-   - Dropdown "Last Exchange Price" = Different value (if fills exist)
-7. **Screenshot:** [ ]
-
-⏱️ **Time:** 1 minute
-✅ **Status:** [ ]
-
-#### Test 3: Mobile Trade Page
-1. Open mobile view
-2. Navigate to Trade tab
-3. Select a pair with fills
-4. **Expected:**
-   - First price (top) = Gecko price
-   - Second price (below) = Exchange price
-   - Values may be different
-5. **Screenshot:** [ ]
-
-⏱️ **Time:** 1 minute
-✅ **Status:** [ ]
-
-#### Test 4: Price Updates
-1. Keep Trade page open
-2. Place a test order (small amount)
-3. **Expected:**
-   - Exchange price updates immediately (if order fills)
-   - Gecko price does NOT update
-4. Wait 39 seconds
-5. **Expected:**
-   - Gecko price updates
-   - Exchange price stays same (unless new fill)
-
-⏱️ **Time:** 2 minutes
-✅ **Status:** [ ]
-
-### Log Verification
-
-#### Price-Worker Logs
-```bash
-pm2 logs price-worker --lines 100
-```
-
-**Look for:**
-- ✅ `gecko_price`, `gecko_price_usd` in update logs
-- ❌ No errors about missing columns
-- ❌ No `price`, `price_usd` being updated (only `gecko_*`)
-
-✅ **Status:** [ ]
-
-#### Backend Logs
-```bash
-tail -f backend/logs/app.log
-```
-
-**Look for:**
-- ✅ Successful pair fetches
-- ✅ `gecko_*` fields being read
-- ❌ No SQL errors
-
-✅ **Status:** [ ]
-
-#### Browser Console
-1. Open DevTools (F12)
-2. Navigate to Console tab
-3. Filter for errors (red)
-4. **Expected:** No errors related to prices
-
-✅ **Status:** [ ]
+| Component | Status | Location | URL |
+|-----------|--------|----------|-----|
+| **Backend API** | ✅ Live | Fly.io | `https://ubtbackend.fly.dev` |
+| **Pair Indexer** | ✅ Live | Fly.io | Internal |
+| **Database** | ✅ Live | Fly.io | Connected |
+| **Frontend** | 🟡 Ready | Vercel | Pending deployment |
+| **Pair Data** | ✅ Live | PostgreSQL | 59 pairs |
 
 ---
 
-## Rollback Plan (If Needed)
+## 📝 Next Steps
 
-### Emergency Rollback
-If critical issues occur:
+1. **Deploy Frontend Now** (Recommended)
+   - Follow "Deployment Instructions" section above
+   - Estimated time: 10-15 minutes
 
-```bash
-# 1. Stop services
-pm2 stop price-worker
-./backend/stop.sh
+2. **Test the Complete System**
+   - Access frontend URL
+   - Load markets/pairs
+   - Connect wallet
+   - Try placing a test order
 
-# 2. Restore database (optional - columns are backward compatible)
-psql -h YOUR_HOST -U YOUR_USER -d YOUR_DB < backup_before_gecko_migration_*.sql
+3. **Monitor Logs**
+   - Vercel: Deployments tab → View logs
+   - Fly.io Backend: Dashboard → Logs
+   - Fly.io Indexer: Dashboard → Logs
 
-# 3. Revert code
-git checkout HEAD~1 backend/internal/models/models.go
-git checkout HEAD~1 backend/internal/handlers/handlers.go
-git checkout HEAD~1 price-worker/index.js
-git checkout HEAD~1 artifacts/dex/src/types/index.ts
-git checkout HEAD~1 artifacts/dex/src/hooks/useRealtimePairs.ts
+4. **Custom Domain (Optional)**
+   - Add custom domain in Vercel Settings
+   - Configure DNS records
 
-# 4. Rebuild backend
-cd backend && go build
-
-# 5. Restart services
-./backend/start.sh
-cd price-worker && pm2 start index.js --name price-worker
-```
-
-⏱️ **Time:** 3-5 minutes
-✅ **Status:** [ ]
+5. **Production Settings (Optional)**
+   - Enable analytics
+   - Set up error tracking (Sentry)
+   - Configure monitoring
 
 ---
 
-## Success Criteria
+## ✉️ Support
 
-### Critical (Must Pass)
-- [ ] Backend starts without errors
-- [ ] Price-worker runs without SQL errors
-- [ ] API returns `gecko_price` and `price` fields
-- [ ] Mobile UI displays prices correctly
-- [ ] No console errors in browser
-
-### Important (Should Pass)
-- [ ] Gecko prices update every 39 seconds
-- [ ] Exchange prices update on fills
-- [ ] Chart dropdown shows separate exchange price
-- [ ] Trade page shows both price types
-
-### Nice to Have (May Pass)
-- [ ] Prices are different (indicates fills exist)
-- [ ] Volume shows correctly
-- [ ] Liquidity shows correctly
+For deployment issues:
+- Check Vercel build logs
+- Check Fly.io app logs
+- Verify environment variables
+- Test backend API manually with curl
 
 ---
 
-## Monitoring (First 24 Hours)
-
-### Hourly Checks
-- [ ] Price-worker still running (`pm2 list`)
-- [ ] No backend errors (`tail backend/logs/app.log`)
-- [ ] No unusual error rate in browser console
-
-### Daily Checks
-- [ ] Database size reasonable (gecko columns not exploding)
-- [ ] API response times normal
-- [ ] User reports of pricing issues (should be zero)
-
----
-
-## Deployment Summary
-
-| Step | Time | Status |
-|------|------|--------|
-| Pre-Deployment | 5-10 min | [ ] |
-| Migration | 1 min | [ ] |
-| Verification | 5 min | [ ] |
-| **Total** | **~15 min** | [ ] |
-
-**Downtime:** ~30 seconds (service restart only)
-
----
-
-## Sign-Off
-
-- [ ] Database migration completed
-- [ ] Backend deployed and verified
-- [ ] Price-worker running correctly
-- [ ] Frontend tested on mobile
-- [ ] No critical errors
-- [ ] Rollback plan ready (just in case)
-- [ ] Monitoring in place
-
-**Deployed by:** _________________  
-**Date:** _________________  
-**Time:** _________________  
-
----
-
-## Support Contacts
-
-If issues arise:
-- **Developer:** Check GECKO_PRICE_SEPARATION_FIX.md
-- **Database:** Verify migration script output
-- **API:** Check backend logs
-- **UI:** Check browser console
-
-**Status:** 🟢 Ready for Deployment
+**Last Updated**: July 20, 2026
+**System Status**: ✅ PRODUCTION READY (Frontend pending deployment)

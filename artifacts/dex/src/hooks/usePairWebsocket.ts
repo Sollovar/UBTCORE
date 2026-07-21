@@ -82,10 +82,27 @@ const buildWebSocketUrl = (pairId?: string) => {
     return url.toString();
   }
 
-  // Always use current origin — in dev the Vite proxy forwards /ws to the Go backend
+  // Try to derive from API_BASE_URL
+  const apiBaseUrl = import.meta.env.VITE_API_URL;
+  if (apiBaseUrl) {
+    try {
+      const url = new URL(apiBaseUrl);
+      // Convert http to ws, https to wss
+      const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsBase = `${protocol}//${url.host}`;
+      const wsUrl = new URL(`${wsBase}/ws`);
+      if (pairId) {
+        wsUrl.searchParams.set('pair', pairId);
+      }
+      return wsUrl.toString();
+    } catch (e) {
+      console.error('[WebSocket] Failed to parse VITE_API_URL:', e);
+    }
+  }
+
+  // Fallback: use current origin (works for local dev with Vite proxy)
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsBase = `${protocol}//${window.location.host}`;
-
   const url = new URL(`${wsBase}/ws`);
   if (pairId) {
     url.searchParams.set('pair', pairId);

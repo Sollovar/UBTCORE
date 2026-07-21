@@ -7,6 +7,7 @@ import { getExplorerTxUrl, Network } from '../utils/contracts';
 import { usePairWebsocket, TradeUpdatePayload, OrderUpdatePayload } from './usePairWebsocket';
 import { playFillSound } from '../utils/sound';
 import { useSettings } from '../contexts/SettingsContext';
+import { API_BASE_URL } from '../utils/constants';
 
 interface Fill {
   id: number;
@@ -452,7 +453,8 @@ export function useFillNotifications(network: Network) {
     const pollFillsForTxHash = async () => {
       if (!isActive) return;
       try {
-        const response = await fetch(`/api/v1/fills/address/${walletAddress}?limit=50`);
+        const url = API_BASE_URL ? `${API_BASE_URL}/api/v1/fills/address/${walletAddress}?limit=50` : `/api/v1/fills/address/${walletAddress}?limit=50`;
+        const response = await fetch(url);
         if (!response.ok) return;
         const data = await response.json();
         const fills: Fill[] = data.data || [];

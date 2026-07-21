@@ -34,7 +34,9 @@ const TF_TO_RESOLUTION: Record<string, string> = {
 async function fetchCandles(pairId: string, resolution: string, limit = 400): Promise<ChartCandle[]> {
   const normalized = normalizeTimeframe(resolution);
   const res = normalized in TF_TO_RESOLUTION ? TF_TO_RESOLUTION[normalized] : "1h";
-  const url = `/api/v1/pairs/${encodeURIComponent(pairId)}/candles?resolution=${res}&currency=usd&limit=${limit}&prefer=fills`;
+  const { API_BASE_URL } = await import('../utils/constants');
+  const baseUrl = API_BASE_URL || '';
+  const url = `${baseUrl}/api/v1/pairs/${encodeURIComponent(pairId)}/candles?resolution=${res}&currency=usd&limit=${limit}&prefer=fills`;
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`candles ${resp.status}`);
   const data = await resp.json() as Array<{

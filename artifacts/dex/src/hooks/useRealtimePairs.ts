@@ -36,6 +36,22 @@ function buildWsUrl(): string {
     u.searchParams.set('pair', 'all');
     return u.toString();
   }
+
+  // Try to derive from API_BASE_URL
+  const apiBaseUrl = import.meta.env.VITE_API_URL as string | undefined;
+  if (apiBaseUrl) {
+    try {
+      const u = new URL(apiBaseUrl);
+      // Convert http to ws, https to wss
+      const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${u.host}/ws?pair=all`;
+      return wsUrl;
+    } catch (e) {
+      console.error('[WebSocket] Failed to parse VITE_API_URL:', e);
+    }
+  }
+
+  // Fallback: use current origin (works for local dev with Vite proxy)
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${proto}//${window.location.host}/ws?pair=all`;
 }
