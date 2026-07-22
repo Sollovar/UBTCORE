@@ -14,12 +14,23 @@ function getAudioContext(): AudioContext {
 }
 
 /**
+ * Resume a suspended AudioContext (required on mobile after page load before
+ * any user-gesture-gated audio interaction).
+ */
+async function resumeContext(ctx: AudioContext) {
+  if (ctx.state === "suspended") {
+    try { await ctx.resume(); } catch (_) { /* ignore */ }
+  }
+}
+
+/**
  * Play a pleasant fill notification sound
  * Creates a two-tone "ding" sound using oscillators
  */
-export function playFillSound() {
+export async function playFillSound() {
   try {
     const ctx = getAudioContext();
+    await resumeContext(ctx);
     const now = ctx.currentTime;
 
     // Create a gain node for volume control
@@ -49,6 +60,61 @@ export function playFillSound() {
 
   } catch (error) {
     console.error('Failed to play fill sound:', error);
+  }
+}
+
+/**
+ * Play a distinctive three-tone price alert sound.
+ * Uses an ascending major triad (C5→E5→G5) with a punchy attack so it
+ * cuts through on mobile speakers.
+ */
+export async function playPriceAlertSound() {
+  try {
+    const ctx = getAudioContext();
+    await resumeContext(ctx);
+    const now = ctx.currentTime;
+
+    // Three ascending tones: C5 (523Hz) → E5 (659Hz) → G5 (784Hz)
+    const tones: [number, number][] = [
+      [523, now + 0.00],
+      [659, now + 0.18],
+      [784, now + 0.36],
+    ];
+
+    tones.forEach(([freq, start]) => {
+      const gain = ctx.createGain();
+      gain.connect(ctx.destination);
+      // Punchy attack, quick decay → tail
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.45, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.12, start + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.28);
+
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, start);
+      osc.connect(gain);
+      osc.start(start);
+      osc.stop(start + 0.30);
+
+      // Subtle harmonic layer (triangle, half volume) for warmth
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(freq * 2, start);
+
+      const gain2 = ctx.createGain();
+      gain2.connect(ctx.destination);
+      gain2.gain.setValueAtTime(0, start);
+      gain2.gain.linearRampToValueAtTime(0.12, start + 0.012);
+      gain2.gain.exponentialRampToValueAtTime(0.001, start + 0.20);
+
+      osc2.connect(gain2);
+      osc2.start(start);
+      osc2.stop(start + 0.22);
+    });
+
+  } catch (error) {
+    console.error('Failed to play price alert sound:', error);
   }
 }
 

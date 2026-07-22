@@ -3,7 +3,7 @@ import { useTranslation } from "@/i18n/i18n";
 import { Search, Star, TrendingUp, TrendingDown, X, Flame, Zap, LayoutList, BarChart2, Bell, Loader2 } from "lucide-react";
 import { MobilePriceAlertSheet, PriceAlert } from "./MobilePriceAlertSheet";
 import { useNotificationStore } from "@/stores/useNotificationStore";
-import { playFillSound } from "@/utils/sound";
+import { playPriceAlertSound } from "@/utils/sound";
 import { LiveMarketState } from "@/hooks/useLiveMarket";
 import { FlashMap } from "@/hooks/useRealtimePairs";
 import { MobilePairHeader } from "./MobilePairHeader";
@@ -314,7 +314,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
             ? alert.target.toFixed(2)
             : alert.target.toFixed(6);
 
-        playFillSound();
+        playPriceAlertSound();
 
         addNotification({
           type: 'price',
@@ -554,7 +554,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden" style={{ paddingBottom:60 }}>
       {Header}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" data-market-scroll="1">
 
         {/* Loading state */}
         {loading && (

@@ -65,15 +65,32 @@ export function MobilePriceAlertSheet({
   }, []);
 
   // Lock background scroll while sheet is open.
-  // Uses a non-passive native listener so preventDefault actually works on mobile.
-  // Touches inside the scrollable area are allowed through; everything else is blocked.
+  // Strategy: set overflow:hidden on the nearest scrolling ancestor (the
+  // market-page list container) so the OS never scrolls it, regardless of
+  // touch-event bubbling.  We also keep the document-level touchmove blocker
+  // as a safety net for touches that land on the backdrop.
   useEffect(() => {
+    // Walk up from the sheet's own scroll area to find the first ancestor that
+    // was already scrollable — that's the market-page list div.
+    const sheetEl = scrollRef.current?.closest?.('[data-market-scroll]') as HTMLElement | null;
+    if (sheetEl) {
+      sheetEl.style.overflow = "hidden";
+      sheetEl.style.touchAction = "none";
+    }
+
     const prevent = (e: TouchEvent) => {
       if (scrollRef.current && scrollRef.current.contains(e.target as Node)) return;
       e.preventDefault();
     };
     document.addEventListener("touchmove", prevent, { passive: false });
-    return () => document.removeEventListener("touchmove", prevent);
+
+    return () => {
+      if (sheetEl) {
+        sheetEl.style.overflow = "";
+        sheetEl.style.touchAction = "";
+      }
+      document.removeEventListener("touchmove", prevent);
+    };
   }, []);
 
   function handleAdd() {
