@@ -1,0 +1,8 @@
+{
+  "buildCommand": "cd artifacts/dex && pnpm run build",
+  "devCommand": "cd artifacts/dex && PORT=23444 pnpm run dev",
+  "outputDirectory": "artifacts/dex/dist/public",
+  "env": {
+    "PORT": "23444"
+  }
+}

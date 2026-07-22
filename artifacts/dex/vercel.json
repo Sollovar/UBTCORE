@@ -1,0 +1,8 @@
+{
+  "buildCommand": "pnpm run build",
+  "devCommand": "PORT=23444 pnpm run dev",
+  "outputDirectory": "dist/public",
+  "env": {
+    "PORT": "23444"
+  }
+}
