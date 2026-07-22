@@ -618,10 +618,10 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
             onScroll={onHeaderScroll}
             data-no-swipe="true"
           >
-            <div className="flex items-center" style={{ minWidth: 760, height: 34 }}>
+            <div className="flex items-center" style={{ minWidth: 782, height: 34 }}>
               <div
                 className="flex items-center shrink-0 pl-3 pr-2 sticky left-0 z-30 h-full"
-                style={{ backgroundColor:"var(--m-bg)", width:148 }}
+                style={{ backgroundColor:"var(--m-bg)", width:170 }}
               >
                 <span className={COL_HEADER} style={{ color:"var(--m-fg-5)" }}>Symbol</span>
               </div>
@@ -648,7 +648,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
 
           {/* ── Pair rows ── */}
           <div ref={bodyScrollRef} className="overflow-x-auto" onScroll={onBodyScroll} data-no-swipe="true">
-            <div style={{ minWidth: 760 }}>
+            <div style={{ minWidth: 782 }}>
               {filtered.map(pair => {
                 const isFav      = favorites.has(pair.symbol);
                 const up         = pair.change >= 0;
@@ -709,8 +709,8 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
                         )}
                       </div>
                       <div className="flex flex-col leading-none gap-0.5 min-w-0 flex-1">
-                        <div className="flex items-center gap-1">
-                          <span className="font-bold text-[12px] leading-tight truncate" style={{ color:"var(--m-fg)" }}>
+                        <div className="flex items-start gap-1">
+                          <span className="font-bold text-[12px] leading-tight break-all" style={{ color:"var(--m-fg)" }}>
                             {pair.base}<span style={{ color:"var(--m-fg-5)", fontWeight:400 }}>/{pair.quote}</span>
                           </span>
                           {hasAlerts && (

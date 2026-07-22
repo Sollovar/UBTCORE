@@ -314,7 +314,7 @@ export function MobileMarketSelectPanel({ onClose, onSelect, currentPairId }: Pr
                 </div>
 
                 <div className="flex flex-col leading-none gap-0.5 min-w-0 text-left">
-                  <span className="font-bold text-[13px] truncate" style={{ color: "var(--m-fg)" }}>
+                  <span className="font-bold text-[13px] break-all leading-tight" style={{ color: "var(--m-fg)" }}>
                     {pair.base}<span style={{ color: "var(--m-fg-4)", fontWeight: 400 }}>/{pair.quote}</span>
                   </span>
                   <span className="text-[10px] truncate" style={{ color: "var(--m-fg-4)" }}>{pair.baseName}</span>
