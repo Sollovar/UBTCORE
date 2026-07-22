@@ -18,6 +18,7 @@ interface Props {
   currentPrice: number;
   color: string;
   initial: string;
+  logo?: string;
   alerts: PriceAlert[];
   onAdd: (alert: PriceAlert) => void;
   onRemove: (id: string) => void;
@@ -32,7 +33,7 @@ function fmtPrice(n: number) {
 }
 
 export function MobilePriceAlertSheet({
-  symbol, base, currentPrice, color, initial, alerts, onAdd, onRemove, onClose,
+  symbol, base, currentPrice, color, initial, logo, alerts, onAdd, onRemove, onClose,
 }: Props) {
   const [direction, setDirection] = useState<"above" | "below">("above");
   const [rawInput,  setRawInput]  = useState(() => fmtPrice(currentPrice * 1.05));
@@ -101,10 +102,24 @@ export function MobilePriceAlertSheet({
         <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ borderBottom: "1px solid var(--m-bdr)" }}>
           <div className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold overflow-hidden"
               style={{ backgroundColor: color + "25", border: `1.5px solid ${color}50` }}
             >
-              <span style={{ color }}>{initial}</span>
+              {logo ? (
+                <img
+                  src={logo}
+                  alt={base}
+                  className="w-full h-full rounded-full object-cover"
+                  onError={e => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.display = "none";
+                    const parent = img.parentElement;
+                    if (parent) parent.innerHTML = `<span style="color:${color}">${initial}</span>`;
+                  }}
+                />
+              ) : (
+                <span style={{ color }}>{initial}</span>
+              )}
             </div>
             <div>
               <p className="text-[15px] font-bold" style={{ color: "var(--m-fg)" }}>

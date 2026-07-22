@@ -3,6 +3,7 @@ import { useTranslation } from "@/i18n/i18n";
 import { Search, Star, TrendingUp, TrendingDown, X, Flame, Zap, LayoutList, BarChart2, Bell, Loader2 } from "lucide-react";
 import { MobilePriceAlertSheet, PriceAlert } from "./MobilePriceAlertSheet";
 import { useNotificationStore } from "@/stores/useNotificationStore";
+import { playFillSound } from "@/utils/sound";
 import { LiveMarketState } from "@/hooks/useLiveMarket";
 import { FlashMap } from "@/hooks/useRealtimePairs";
 import { MobilePairHeader } from "./MobilePairHeader";
@@ -308,10 +309,13 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
             ? alert.target.toFixed(2)
             : alert.target.toFixed(6);
 
+        playFillSound();
+
         addNotification({
           type: 'price',
           title: 'Price Alert',
           body: `${alert.base}/${pair.quote} has ${alert.direction === 'above' ? 'risen above' : 'fallen below'} $${readablePrice}`,
+          logoUrl: pair.logo,
         });
 
         triggeredAlertsRef.current.add(alert.id);
@@ -331,7 +335,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
     pressMove.current = false;
     pressTimer.current = setTimeout(() => {
       if (!pressMove.current) setAlertPair(pair);
-    }, 500);
+    }, 3000);
   }, []);
 
   const cancelPress = useCallback(() => {
@@ -781,6 +785,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
           currentPrice={alertPair.price}
           color={alertPair.color}
           initial={alertPair.initial}
+          logo={alertPair.logo}
           alerts={alerts[alertPair.symbol] ?? []}
           onAdd={addAlert}
           onRemove={(id) => removeAlert(alertPair.symbol, id)}
