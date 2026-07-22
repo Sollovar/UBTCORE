@@ -90,14 +90,15 @@ export function MobilePriceAlertSheet({
 
   return (
     <>
-      {/* backdrop */}
+      {/* backdrop — block background scroll on touch */}
       <div
         className="fixed inset-0 z-40"
         style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
         onClick={onClose}
+        onTouchMove={e => e.preventDefault()}
       />
 
-      {/* sheet */}
+      {/* sheet — stop bubbling so market-page list never scrolls */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl flex flex-col"
         style={{
@@ -106,6 +107,7 @@ export function MobilePriceAlertSheet({
           maxHeight: "85vh",
           animation: "slideUp 0.28s cubic-bezier(.32,1.2,.46,.99)",
         }}
+        onTouchMove={e => e.stopPropagation()}
       >
         {/* drag handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
