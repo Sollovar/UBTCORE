@@ -52,7 +52,8 @@ export function MobilePriceAlertSheet({
   const [direction, setDirection] = useState<"above" | "below">("above");
   const [rawInput,  setRawInput]  = useState(() => fmtPrice(currentPrice * 1.05));
   const [saved,     setSaved]     = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
+  const scrollRef   = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setRawInput(fmtPrice(direction === "above" ? currentPrice * 1.05 : currentPrice * 0.95));
@@ -61,6 +62,18 @@ export function MobilePriceAlertSheet({
   useEffect(() => {
     const id = setTimeout(() => inputRef.current?.focus(), 250);
     return () => clearTimeout(id);
+  }, []);
+
+  // Lock background scroll while sheet is open.
+  // Uses a non-passive native listener so preventDefault actually works on mobile.
+  // Touches inside the scrollable area are allowed through; everything else is blocked.
+  useEffect(() => {
+    const prevent = (e: TouchEvent) => {
+      if (scrollRef.current && scrollRef.current.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    document.addEventListener("touchmove", prevent, { passive: false });
+    return () => document.removeEventListener("touchmove", prevent);
   }, []);
 
   function handleAdd() {
@@ -151,7 +164,7 @@ export function MobilePriceAlertSheet({
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div ref={scrollRef} className="overflow-y-auto flex-1 min-h-0 px-5 py-4" style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
 
           {/* direction toggle */}
           <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--m-fg-5)" }}>Alert when price is</p>

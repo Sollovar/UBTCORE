@@ -210,7 +210,12 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
     return new Set();
   });
   const [mainTab,   setMainTab]   = useState<MainTab>("Chart");
-  const [alerts,    setAlerts]    = useState<Record<string, PriceAlert[]>>({});
+  const [alerts,    setAlerts]    = useState<Record<string, PriceAlert[]>>(() => {
+    try {
+      const saved = localStorage.getItem("cexdex-price-alerts");
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
   const [alertPair, setAlertPair] = useState<DisplayPair | null>(null);
   const pressTimer      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressMove       = useRef(false);
@@ -341,6 +346,13 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
   const cancelPress = useCallback(() => {
     if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; }
   }, []);
+
+  // Persist alerts to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("cexdex-price-alerts", JSON.stringify(alerts));
+    } catch {}
+  }, [alerts]);
 
   function addAlert(alert: PriceAlert) {
     setAlerts(prev => ({ ...prev, [alert.symbol]: [...(prev[alert.symbol] ?? []), alert] }));
