@@ -335,7 +335,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
     pressMove.current = false;
     pressTimer.current = setTimeout(() => {
       if (!pressMove.current) setAlertPair(pair);
-    }, 3000);
+    }, 500);
   }, []);
 
   const cancelPress = useCallback(() => {

@@ -25,11 +25,25 @@ interface Props {
   onClose: () => void;
 }
 
-function fmtPrice(n: number) {
-  if (n >= 10000) return n.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  if (n >= 100)   return n.toFixed(2);
-  if (n >= 1)     return n.toFixed(4);
-  return n.toFixed(6);
+const SUBSCRIPT_DIGITS = ["₀","₁","₂","₃","₄","₅","₆","₇","₈","₉"];
+function toSubscript(n: number): string {
+  return String(n).split("").map(c => SUBSCRIPT_DIGITS[parseInt(c)] ?? c).join("");
+}
+
+function fmtPrice(n: number): string {
+  if (n === 0)     return "0";
+  if (n >= 10000)  return n.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (n >= 100)    return n.toFixed(2);
+  if (n >= 1)      return n.toFixed(4);
+  if (n >= 0.0001) return n.toFixed(6);
+  // Very small: 0.0₆33 notation
+  const str = n.toFixed(20);
+  const afterDot = str.split(".")[1] ?? "";
+  let zeros = 0;
+  for (const c of afterDot) { if (c === "0") zeros++; else break; }
+  const sigRaw = afterDot.slice(zeros, zeros + 4).replace(/0+$/, "") || "0";
+  if (zeros < 4) return n.toFixed(6);
+  return `0.0${toSubscript(zeros - 1)}${sigRaw}`;
 }
 
 export function MobilePriceAlertSheet({
@@ -135,7 +149,7 @@ export function MobilePriceAlertSheet({
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-4">
+        <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4" style={{ WebkitOverflowScrolling: "touch" }}>
 
           {/* direction toggle */}
           <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--m-fg-5)" }}>Alert when price is</p>
