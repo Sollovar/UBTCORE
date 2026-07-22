@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { warmUpAudioContext } from "@/utils/sound";
 import { X, Bell, BellOff, ArrowUp, ArrowDown, Trash2, CheckCircle } from "lucide-react";
 
 export interface PriceAlert {
@@ -64,33 +65,23 @@ export function MobilePriceAlertSheet({
     return () => clearTimeout(id);
   }, []);
 
-  // Lock background scroll while sheet is open.
-  // Strategy: set overflow:hidden on the nearest scrolling ancestor (the
-  // market-page list container) so the OS never scrolls it, regardless of
-  // touch-event bubbling.  We also keep the document-level touchmove blocker
-  // as a safety net for touches that land on the backdrop.
+  // Warm up the AudioContext while we're still inside a user-gesture frame
+  // (the sheet opens from a long-press, which counts as a gesture on iOS/Android).
+  // This ensures the context is unlocked before any programmatic alert sound fires.
   useEffect(() => {
-    // Walk up from the sheet's own scroll area to find the first ancestor that
-    // was already scrollable — that's the market-page list div.
-    const sheetEl = scrollRef.current?.closest?.('[data-market-scroll]') as HTMLElement | null;
-    if (sheetEl) {
-      sheetEl.style.overflow = "hidden";
-      sheetEl.style.touchAction = "none";
-    }
+    warmUpAudioContext();
+  }, []);
 
+  // Block background scroll while the sheet is open.
+  // Non-passive native listener so preventDefault actually cancels scroll on mobile.
+  // Touches that land inside our own scrollable area are let through.
+  useEffect(() => {
     const prevent = (e: TouchEvent) => {
       if (scrollRef.current && scrollRef.current.contains(e.target as Node)) return;
       e.preventDefault();
     };
     document.addEventListener("touchmove", prevent, { passive: false });
-
-    return () => {
-      if (sheetEl) {
-        sheetEl.style.overflow = "";
-        sheetEl.style.touchAction = "";
-      }
-      document.removeEventListener("touchmove", prevent);
-    };
+    return () => document.removeEventListener("touchmove", prevent);
   }, []);
 
   function handleAdd() {
@@ -98,6 +89,10 @@ export function MobilePriceAlertSheet({
     if (isNaN(target) || target <= 0) return;
     if (direction === "above" && target <= currentPrice) return;
     if (direction === "below" && target >= currentPrice) return;
+
+    // Warm up the AudioContext while we're still inside a tap (user gesture),
+    // so it's unlocked before the alert fires later from a useEffect.
+    warmUpAudioContext();
 
     onAdd({
       id: Math.random().toString(36).slice(2),

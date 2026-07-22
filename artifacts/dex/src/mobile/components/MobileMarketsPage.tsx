@@ -4,6 +4,7 @@ import { Search, Star, TrendingUp, TrendingDown, X, Flame, Zap, LayoutList, BarC
 import { MobilePriceAlertSheet, PriceAlert } from "./MobilePriceAlertSheet";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { playPriceAlertSound } from "@/utils/sound";
+import { useSettings } from "@/contexts/SettingsContext";
 import { LiveMarketState } from "@/hooks/useLiveMarket";
 import { FlashMap } from "@/hooks/useRealtimePairs";
 import { MobilePairHeader } from "./MobilePairHeader";
@@ -223,6 +224,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
   const bodyScrollRef   = useRef<HTMLDivElement>(null);
 
   const { pairs: apiPairs, loading } = usePairs();
+  const { soundEnabled } = useSettings();
   const addNotification = useNotificationStore((state) => state.addNotification);
   const triggeredAlertsRef = useRef<Set<string>>(new Set());
 
@@ -314,7 +316,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
             ? alert.target.toFixed(2)
             : alert.target.toFixed(6);
 
-        playPriceAlertSound();
+        if (soundEnabled) playPriceAlertSound();
 
         addNotification({
           type: 'price',
@@ -330,7 +332,7 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
         }));
       });
     });
-  }, [alerts, pairs, addNotification]);
+  }, [alerts, pairs, addNotification, soundEnabled]);
 
   const onHeaderScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     if (bodyScrollRef.current) bodyScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
@@ -554,7 +556,10 @@ export function MobileMarketsPage({ market, currentPairId, flashMap = {}, onSele
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden" style={{ paddingBottom:60 }}>
       {Header}
 
-      <div className="flex-1 overflow-y-auto" data-market-scroll="1">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={alertPair ? { overflow: "hidden", touchAction: "none" } : undefined}
+      >
 
         {/* Loading state */}
         {loading && (
